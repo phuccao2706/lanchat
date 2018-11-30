@@ -82,15 +82,47 @@ namespace Server
                     byte[] data = new byte[5120000];
                     client.Receive(data);
 
-                    string message = (string)putTogether(data);
-                    addMessage(message);
+                    string[] message = (string[])putTogether(data);
 
-                    foreach(Socket item in clientList) //send the message to other clients
+                    switch (message[0])
                     {
-                        if(item != client) //except for the one who send the message
-                        {
-                            item.Send(breakDown(message));
-                        }
+                        case "message":
+                            addMessage(message[2] + ": " + message[1]);
+                            foreach (Socket item in clientList) //send the message to other clients
+                            {
+                                if (item != client) //except for the one who send the message
+                                {
+                                    item.Send(breakDown(message[2] + ": " + message[1]));
+                                }
+                            }
+                            break;
+                        case "left":
+                            addBoldMessage(message[2] + " just left!");
+
+                            lvClient.Items.RemoveAt(clientList.IndexOf(client));
+
+                            foreach (Socket item in clientList) //send the message to other clients
+                            {
+                                if (item != client) //except for the one who send the message
+                                {
+                                    item.Send(breakDown(message[2] + " just left!"));
+                                }
+                            }
+                            break;
+                        case "connect":
+                            addBoldMessage(message[2] + " just connected!");
+
+                            IPEndPoint clientIP = client.RemoteEndPoint as IPEndPoint;
+                            loadListClients(message[2], clientIP);
+
+                            foreach (Socket item in clientList) //send the message to other clients
+                            {
+                                if (item != client) //except for the one who send the message
+                                {
+                                    item.Send(breakDown(message[2] + " just connected!"));
+                                }
+                            }
+                            break;
                     }
                 }
             }
@@ -101,10 +133,17 @@ namespace Server
             }
 
         }
-
         void addMessage(string message)
         {
             lvMessage.Items.Add(new ListViewItem() { Text = message });
+        }
+
+        void addBoldMessage(string message)
+        {
+            ListViewItem temp = new ListViewItem();
+            temp.Text = message;
+            temp.Font = new Font(lvMessage.Font, FontStyle.Bold);
+            lvMessage.Items.Add(temp);
         }
 
         //breakdown an object into a byte array
@@ -138,12 +177,29 @@ namespace Server
 
         private void bSend_Click(object sender, EventArgs e)
         {
+            addBoldMessage("Server: " + tbMessage.Text);
             foreach (Socket item in clientList)
             {
                 sendMessage(item);
             }
-            addMessage(tbMessage.Text);
             tbMessage.Text = "";
+        }
+
+        void loadListClients(string username, IPEndPoint clientIP)
+        {
+            string[] subItems = new string[3];
+            
+            subItems[1] = username;
+            subItems[2] = clientIP.ToString().Split(':')[0];
+
+            ListViewItem lvi = new ListViewItem(subItems);
+            lvClient.Items.Add(lvi);
+        }
+
+        private void lvClient_ColumnWidthChanging(object sender, ColumnWidthChangingEventArgs e)
+        {
+            e.Cancel = true;
+            e.NewWidth = lvClient.Columns[e.ColumnIndex].Width;
         }
     }
 }

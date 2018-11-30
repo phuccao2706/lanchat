@@ -17,15 +17,30 @@ namespace Client
 {
     public partial class Client : Form
     {
+        string username;
         public Client()
         {
             InitializeComponent();
             CheckForIllegalCrossThreadCalls = false;
             connectClient(); //connect right from the begining
         }
-
+      
         private void Form1_Load(object sender, EventArgs e)
         {
+            Login loginForm = new Login();
+            loginForm.ShowDialog();
+
+            if (loginForm.DialogResult == DialogResult.OK)
+                username = loginForm.username;
+
+            Text = "Connected as: " + username;
+
+            string[] dataPackage = new string[3];
+            dataPackage[0] = "connect";
+            dataPackage[1] = "";
+            dataPackage[2] = username;
+            client.Send(breakDown(dataPackage));
+
             this.ActiveControl = tbMessage;
         }
 
@@ -47,6 +62,8 @@ namespace Client
             try
             {
                 client.Connect(IP);
+
+                
             }
             catch
             {
@@ -68,7 +85,13 @@ namespace Client
         void sendMessage()
         {
             if(tbMessage.Text != string.Empty)
-                client.Send(breakDown(tbMessage.Text));
+            {
+                string[] dataPackage = new string[3];
+                dataPackage[0] = "message";
+                dataPackage[1] = tbMessage.Text;
+                dataPackage[2] = username;
+                client.Send(breakDown(dataPackage));
+            }
         }
 
         void receiveMessage()
@@ -81,7 +104,7 @@ namespace Client
                     client.Receive(data);
 
                     string message = (string)putTogether(data);
-                    addMessage(message);
+                    addMessage("Server: " + message);
                 }
             }
             catch
@@ -117,6 +140,12 @@ namespace Client
 
         private void Client_FormClosed(object sender, FormClosedEventArgs e)
         {
+            string[] dataPackage = new string[3];
+            dataPackage[0] = "left";
+            dataPackage[1] = "";
+            dataPackage[2] = username;
+            client.Send(breakDown(dataPackage));
+
             disconnectClient();
         }
     }
