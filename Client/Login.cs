@@ -26,12 +26,30 @@ namespace Client
             if(tbUsername.Text == "")
             {
                 MessageBox.Show("Please enter something!");
+            } else if(tbUsername.Text == "Admin" || tbUsername.Text == "admin")
+            {
+                MessageBox.Show("Please enter something else!");
             }
             else
             {
                 username = tbUsername.Text;
                 this.DialogResult = DialogResult.OK;
             }
+        }
+
+        private void Login_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Login_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            //Application.Exit();
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

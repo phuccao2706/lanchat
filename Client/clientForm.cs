@@ -23,12 +23,14 @@ namespace Client
             InitializeComponent();
             CheckForIllegalCrossThreadCalls = false;
             connectClient(); //connect right from the begining
+            
         }
       
         private void Form1_Load(object sender, EventArgs e)
         {
             Login loginForm = new Login();
             loginForm.ShowDialog();
+            
 
             if (loginForm.DialogResult == DialogResult.OK)
                 username = loginForm.username;
@@ -46,9 +48,12 @@ namespace Client
 
         private void bSend_Click(object sender, EventArgs e)
         {
-            sendMessage();
-            addMessage(tbMessage.Text);
-            tbMessage.Text = "";
+            if(tbMessage.Text != "")
+            {
+                sendMessage();
+                addMessage("You: " + tbMessage.Text);
+                tbMessage.Text = "";
+            }
         }
 
         IPEndPoint IP;
@@ -86,6 +91,8 @@ namespace Client
         {
             if(tbMessage.Text != string.Empty)
             {
+                IPEndPoint clientIP = client.RemoteEndPoint as IPEndPoint;
+
                 string[] dataPackage = new string[3];
                 dataPackage[0] = "message";
                 dataPackage[1] = tbMessage.Text;
@@ -103,8 +110,25 @@ namespace Client
                     byte[] data = new byte[5120000];
                     client.Receive(data);
 
-                    string message = (string)putTogether(data);
-                    addMessage("Server: " + message);
+                    string[] message = (string[])putTogether(data);
+
+                    switch (message[0])
+                    {
+                        case "message":
+                            addMessage(message[1]);
+                            break;
+                        case "announcement":
+                            addMessage("Server: " + message[1]);
+                            break;
+                        case "kick":
+                            string[] dataPackage = new string[3];
+                            dataPackage[0] = "kicked";
+                            dataPackage[1] = "";
+                            dataPackage[2] = username;
+                            client.Send(breakDown(dataPackage));
+                            Application.Exit();
+                            break;
+                    }
                 }
             }
             catch
@@ -116,7 +140,7 @@ namespace Client
 
         void addMessage(string message)
         {
-            lvMessage.Items.Add(new ListViewItem() { Text = message });
+            lvMessage.Text += message + "\r\n";
         }
 
         //breakdown an object into a byte array
@@ -147,6 +171,33 @@ namespace Client
             client.Send(breakDown(dataPackage));
 
             disconnectClient();
+        }
+
+        private void bImage_Click(object sender, EventArgs e)
+        {
+            //OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            //openFileDialog1.Filter = "Images |*.bmp;*.jpg;*.png;*.gif;*.ico";
+            //openFileDialog1.Multiselect = false;
+            //openFileDialog1.FileName = "";
+            //DialogResult result = openFileDialog1.ShowDialog();
+            //if (result == DialogResult.OK)
+            //{
+            //    Image img = Image.FromFile(openFileDialog1.FileName);
+            //    Clipboard.SetImage(img);
+            //    lvMessage.Paste(img);
+            //    lvMessage.Focus();
+            //}
+            //else
+            //{
+            //    lvMessage.Focus();
+            //}
+
+        }
+
+        private void lvMessage_TextChanged(object sender, EventArgs e)
+        {
+            lvMessage.SelectionStart = lvMessage.Text.Length;
+            lvMessage.ScrollToCaret();
         }
     }
 }

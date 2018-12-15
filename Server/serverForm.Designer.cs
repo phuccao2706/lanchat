@@ -28,13 +28,18 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(serverForm));
             this.bSend = new System.Windows.Forms.Button();
             this.tbMessage = new System.Windows.Forms.TextBox();
-            this.lvMessage = new System.Windows.Forms.ListView();
             this.lvClient = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.popupMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.kickToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.lvMessage = new System.Windows.Forms.RichTextBox();
+            this.popupMenu.SuspendLayout();
             this.SuspendLayout();
             // 
             // bSend
@@ -55,23 +60,17 @@
             this.tbMessage.Size = new System.Drawing.Size(696, 20);
             this.tbMessage.TabIndex = 4;
             // 
-            // lvMessage
-            // 
-            this.lvMessage.Location = new System.Drawing.Point(12, 11);
-            this.lvMessage.Name = "lvMessage";
-            this.lvMessage.Size = new System.Drawing.Size(542, 400);
-            this.lvMessage.TabIndex = 3;
-            this.lvMessage.UseCompatibleStateImageBehavior = false;
-            this.lvMessage.View = System.Windows.Forms.View.List;
-            // 
             // lvClient
             // 
-            this.lvClient.AutoArrange = false;
             this.lvClient.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1,
             this.columnHeader2,
             this.columnHeader3});
+            this.lvClient.ContextMenuStrip = this.popupMenu;
+            this.lvClient.FullRowSelect = true;
             this.lvClient.GridLines = true;
+            this.lvClient.HoverSelection = true;
+            this.lvClient.ImeMode = System.Windows.Forms.ImeMode.NoControl;
             this.lvClient.Location = new System.Drawing.Point(560, 12);
             this.lvClient.Name = "lvClient";
             this.lvClient.Size = new System.Drawing.Size(228, 400);
@@ -95,20 +94,48 @@
             this.columnHeader3.Text = "IP";
             this.columnHeader3.Width = 112;
             // 
+            // popupMenu
+            // 
+            this.popupMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.kickToolStripMenuItem});
+            this.popupMenu.Name = "popupMenu";
+            this.popupMenu.Size = new System.Drawing.Size(97, 26);
+            // 
+            // kickToolStripMenuItem
+            // 
+            this.kickToolStripMenuItem.Name = "kickToolStripMenuItem";
+            this.kickToolStripMenuItem.Size = new System.Drawing.Size(96, 22);
+            this.kickToolStripMenuItem.Text = "Kick";
+            this.kickToolStripMenuItem.Click += new System.EventHandler(this.kickToolStripMenuItem_Click);
+            // 
+            // lvMessage
+            // 
+            this.lvMessage.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lvMessage.HideSelection = false;
+            this.lvMessage.Location = new System.Drawing.Point(12, 12);
+            this.lvMessage.Name = "lvMessage";
+            this.lvMessage.ReadOnly = true;
+            this.lvMessage.Size = new System.Drawing.Size(542, 399);
+            this.lvMessage.TabIndex = 7;
+            this.lvMessage.Text = "";
+            this.lvMessage.TextChanged += new System.EventHandler(this.lvMessage_TextChanged);
+            // 
             // serverForm
             // 
             this.AcceptButton = this.bSend;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.lvMessage);
             this.Controls.Add(this.lvClient);
             this.Controls.Add(this.bSend);
             this.Controls.Add(this.tbMessage);
-            this.Controls.Add(this.lvMessage);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "serverForm";
             this.Text = "Server";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.serverForm_FormClosed);
             this.Load += new System.EventHandler(this.serverForm_Load);
+            this.popupMenu.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -118,11 +145,13 @@
 
         private System.Windows.Forms.Button bSend;
         private System.Windows.Forms.TextBox tbMessage;
-        private System.Windows.Forms.ListView lvMessage;
-        private System.Windows.Forms.ListView lvClient;
         private System.Windows.Forms.ColumnHeader columnHeader1;
         private System.Windows.Forms.ColumnHeader columnHeader2;
         private System.Windows.Forms.ColumnHeader columnHeader3;
+        private System.Windows.Forms.RichTextBox lvMessage;
+        private System.Windows.Forms.ContextMenuStrip popupMenu;
+        private System.Windows.Forms.ToolStripMenuItem kickToolStripMenuItem;
+        public System.Windows.Forms.ListView lvClient;
     }
 }
 

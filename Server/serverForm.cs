@@ -22,6 +22,9 @@ namespace Server
             InitializeComponent();
             CheckForIllegalCrossThreadCalls = false;
             createServer();
+
+            var button = new ToolStripButton("kick");
+            button.Click += kickToolStripMenuItem_Click;
         }
 
         IPEndPoint IP;
@@ -69,7 +72,13 @@ namespace Server
         void sendMessage(Socket client)
         {
             if (tbMessage.Text != string.Empty)
-                client.Send(breakDown(tbMessage.Text));
+            {
+                string[] dataPackage = new string[2];
+                dataPackage[0] = "message";
+                dataPackage[1] = "Server: " + tbMessage.Text;
+                client.Send(breakDown(dataPackage));
+            }
+                
         }
 
         void receiveMessage(object obj)
@@ -83,43 +92,68 @@ namespace Server
                     client.Receive(data);
 
                     string[] message = (string[])putTogether(data);
+                    IPEndPoint clientIP = client.RemoteEndPoint as IPEndPoint;
 
                     switch (message[0])
                     {
                         case "message":
-                            addMessage(message[2] + ": " + message[1]);
+                            addMessage(message[2] + " (" + clientIP.ToString() + "): " + message[1]);
                             foreach (Socket item in clientList) //send the message to other clients
                             {
                                 if (item != client) //except for the one who send the message
                                 {
-                                    item.Send(breakDown(message[2] + ": " + message[1]));
+                                    string[] dataPackage = new string[2];
+                                    dataPackage[0] = "message";
+                                    dataPackage[1] = message[2] + " (" +  clientIP.ToString() + "): " + message[1];
+                                    item.Send(breakDown(dataPackage));
                                 }
                             }
+                            
                             break;
                         case "left":
-                            addBoldMessage(message[2] + " just left!");
-
-                            lvClient.Items.RemoveAt(clientList.IndexOf(client));
+                            addMessage(">>" + message[2] + " (" + clientIP.ToString() + ") just left!");
+                            int temp = clientList.IndexOf(client);
+                            lvClient.Items.RemoveAt(temp);
+                            clientList.RemoveAt(temp);
 
                             foreach (Socket item in clientList) //send the message to other clients
                             {
                                 if (item != client) //except for the one who send the message
                                 {
-                                    item.Send(breakDown(message[2] + " just left!"));
+                                    string[] dataPackage = new string[2];
+                                    dataPackage[0] = "announcement";
+                                    dataPackage[1] = message[2] + " (" + clientIP.ToString() + ") just left!";
+                                    item.Send(breakDown(dataPackage));
                                 }
                             }
                             break;
                         case "connect":
-                            addBoldMessage(message[2] + " just connected!");
+                            addMessage(">>" + message[2] + "(" + clientIP.ToString() + ") just connected!");
 
-                            IPEndPoint clientIP = client.RemoteEndPoint as IPEndPoint;
-                            loadListClients(message[2], clientIP);
+                            
+                            loadListClients(message[2], clientIP, client);
 
                             foreach (Socket item in clientList) //send the message to other clients
                             {
                                 if (item != client) //except for the one who send the message
                                 {
-                                    item.Send(breakDown(message[2] + " just connected!"));
+                                    string[] dataPackage = new string[2];
+                                    dataPackage[0] = "announcement";
+                                    dataPackage[1] = message[2] + " (" + clientIP.ToString() + ") just connected!";
+                                    item.Send(breakDown(dataPackage));
+                                }
+                            }
+                            break;
+                        case "kicked":
+                            addMessage(message[2] + " (" + clientIP.ToString() + ") has been kicked");
+                            foreach (Socket item in clientList) //send the message to other clients
+                            {
+                                if (item != client) //except for the one who send the message
+                                {
+                                    string[] dataPackage = new string[2];
+                                    dataPackage[0] = "message";
+                                    dataPackage[1] = message[2] + " has been kicked";
+                                    item.Send(breakDown(dataPackage));
                                 }
                             }
                             break;
@@ -135,15 +169,12 @@ namespace Server
         }
         void addMessage(string message)
         {
-            lvMessage.Items.Add(new ListViewItem() { Text = message });
+            lvMessage.AppendText(message + "\r\n");
         }
 
         void addBoldMessage(string message)
         {
-            ListViewItem temp = new ListViewItem();
-            temp.Text = message;
-            temp.Font = new Font(lvMessage.Font, FontStyle.Bold);
-            lvMessage.Items.Add(temp);
+
         }
 
         //breakdown an object into a byte array
@@ -177,29 +208,63 @@ namespace Server
 
         private void bSend_Click(object sender, EventArgs e)
         {
-            addBoldMessage("Server: " + tbMessage.Text);
-            foreach (Socket item in clientList)
+            addMessage(">> Server: " + tbMessage.Text);
+            if (tbMessage.Text != "")
             {
-                sendMessage(item);
+                foreach (Socket item in clientList)
+                {
+                    sendMessage(item);
+                }
+                tbMessage.Text = "";
             }
-            tbMessage.Text = "";
+            
         }
 
-        void loadListClients(string username, IPEndPoint clientIP)
+        void loadListClients(string username, IPEndPoint clientIP, Socket client)
         {
             string[] subItems = new string[3];
             
             subItems[1] = username;
-            subItems[2] = clientIP.ToString().Split(':')[0];
+            subItems[2] = clientIP.ToString()/*.Split(':')[0]*/;
 
             ListViewItem lvi = new ListViewItem(subItems);
+            lvi.Tag = client;
+
             lvClient.Items.Add(lvi);
         }
 
         private void lvClient_ColumnWidthChanging(object sender, ColumnWidthChangingEventArgs e)
         {
-            e.Cancel = true;
-            e.NewWidth = lvClient.Columns[e.ColumnIndex].Width;
+            //e.Cancel = true;
+            //e.NewWidth = lvClient.Columns[e.ColumnIndex].Width;
+        }
+
+        private void lvMessage_TextChanged(object sender, EventArgs e)
+        {
+            lvMessage.SelectionStart = lvMessage.Text.Length;
+            lvMessage.ScrollToCaret();
+        }
+        
+
+        private void kickToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //if (lvClient.SelectedItems.Count > 0)
+            //{
+            //    int temp = lvClient.Items.IndexOf(lvClient.SelectedItems[0]);
+            //    Socket client = clientList.ElementAt(temp);
+            //    client.Send(breakDown("something hihi"));
+            //}
+            if (lvClient.SelectedIndices.Count > 0)
+            {
+                int temp = lvClient.SelectedIndices[0];
+                Socket client = clientList.ElementAt(temp);
+
+                string[] dataPackage = new string[2];
+                dataPackage[0] = "kick";
+                dataPackage[1] = "";
+                client.Send(breakDown(dataPackage));
+            }
+            
         }
     }
 }
